@@ -1,131 +1,51 @@
 import { Injectable } from '@nestjs/common';
 import { WeatherDto } from './dto/weather-data.dto';
-import { OpenMeteoWeatherResponseDto } from './dto/open-meteo-data.dto';
-import { OpenMeteoSummaryResponseDto } from './dto/open-meteo-summary.dto';
 import { WeatherSummaryDto } from './dto/weather-summary.dto';
-import { PRECIPITATION_CODES } from 'src/common/constants/weather-codes';
-import { ConfigService } from '@nestjs/config/dist/config.service';
-import { ValidationService } from 'src/common/services/validation.service';
+import { WeatherCalculationService } from './services/weatherCalculation.service';
+import { OpenMeteoApiService } from './services/openMeteoAPI.service';
 
 @Injectable()
 export class WeatherService {
-  private readonly openMeteoApiKey: string;
-
   constructor(
-    private readonly configService: ConfigService,
-    private readonly validationService: ValidationService
-  ) {
-    this.openMeteoApiKey = this.configService.get<string>('app.openMeteoApiKey')!;
-  }
+    private readonly weatherCalculationService: WeatherCalculationService,
+    private readonly openMeteoApiService: OpenMeteoApiService
+  ) { }
 
   async getWeatherInfo(latitude: number, longitude: number): Promise<WeatherDto[]> {
-    // w razie potrzeby latwo mozna dodac wiecej parametrow
-    const params = {
-      latitude: latitude.toString(),
-      longitude: longitude.toString(),
-      daily: 'temperature_2m_max,temperature_2m_min,weather_code,shortwave_radiation_sum,sunshine_duration',
-      timezone: 'auto',
-      forecast_days: '7'
-    }
+    const data = await this.openMeteoApiService.fetchWeatherData(latitude, longitude);
+    const estimateGeneratedEnergy = this.weatherCalculationService.getEstimateGeneratedEnergy(data.daily.sunshine_duration);
 
-    const url = `${this.openMeteoApiKey}?${new URLSearchParams(params).toString()}`;
+    const weeklyData: WeatherDto[] = data.daily.time.map((date: string, index: number) => ({
+      date,
+      weatherCode: data.daily.weather_code[index],
+      minTemperature: data.daily.temperature_2m_min[index],
+      maxTemperature: data.daily.temperature_2m_max[index],
+      estimatedEnergy: Math.round(estimateGeneratedEnergy[index] * 100) / 100
+    }));
 
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Nie udało się pobrać danych z zewnętrznego API, kod błędu: ${response.status}`);
-      }
-      const rawData = await response.json();
-      const data = await this.validationService.validateApiResponse<OpenMeteoWeatherResponseDto>(rawData, OpenMeteoWeatherResponseDto);
-      const estimateGeneratedEnergy = this.getEstimateGeneratedEnergy(data.daily.sunshine_duration);
-
-      const weeklyData: WeatherDto[] = data.daily.time.map((date: string, index: number) => {
-        return {
-          date,
-          weatherCode: data.daily.weather_code[index],
-          minTemperature: data.daily.temperature_2m_min[index],
-          maxTemperature: data.daily.temperature_2m_max[index],
-          estimatedEnergy: estimateGeneratedEnergy[index]
-        }
-      });
-
-      return weeklyData
-
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  private getEstimateGeneratedEnergy(sunshine_duration: number[]) {
-    //dane z zadania
-    const panels_efficency = 0.2;
-    const panels_power = 2.5;
-    return sunshine_duration.map(duration => {
-      const hours = duration / 3600; //[s] to [h]
-      // energia[kWh] = moc instalacji[kW] x czas ekspozycji[h] x efektywność paneli
-      return panels_power * hours * panels_efficency;
-    });
+    return weeklyData;
   }
 
   async getWeatherSummary(latitude: number, longitude: number): Promise<WeatherSummaryDto> {
-    // w razie potrzeby latwo mozna dodac wiecej parametrow
-    const params = {
-      latitude: latitude.toString(),
-      longitude: longitude.toString(),
-      daily: 'temperature_2m_max,temperature_2m_min,weather_code,sunshine_duration,surface_pressure_mean',
-      timezone: 'auto',
-      forecast_days: '7'
-    }
-    const url = `${this.openMeteoApiKey}?${new URLSearchParams(params).toString()}`;
+    const data = await this.openMeteoApiService.fetchSummaryData(latitude, longitude);
 
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Nie udało się pobrać danych z zewnętrznego API, kod błędu: ${response.status}`);
-      }
-      const rawData = await response.json();
-      const data = await this.validationService.validateApiResponse<OpenMeteoSummaryResponseDto>(rawData, OpenMeteoSummaryResponseDto);
+    const avgPressure = this.weatherCalculationService.calculateAverage(data.daily.surface_pressure_mean);
+    const avgExpositionTimeSeconds = this.weatherCalculationService.calculateAverage(data.daily.sunshine_duration);
+    const avgExpositionTime = avgExpositionTimeSeconds / 3600; // [s] -> [h]
 
-      // srednie arytmetyczne
-      const avgPressure = this.calculateAverage(data.daily.surface_pressure_mean);
-      const avgExpositionTime = this.calculateAverage(data.daily.sunshine_duration) / 3600; //[s] to [h]
-      // skrajne temperatury
-      const minTemperature = Math.min(...data.daily.temperature_2m_min);
-      const maxTemperature = Math.max(...data.daily.temperature_2m_max);
-      //podsumowanie pogody
-      const weatherPrediction = this.getWeatherPrediction(data.daily.weather_code);
+    const minTemperature = Math.min(...data.daily.temperature_2m_min);
+    const maxTemperature = Math.max(...data.daily.temperature_2m_max);
+    const weatherPrediction = this.weatherCalculationService.getWeatherPrediction(data.daily.weather_code);
 
-      const summarizeWeeklyData: WeatherSummaryDto = {
-        averagePressure: avgPressure,
-        averageExpositionTime: avgExpositionTime,
-        minTemperature: minTemperature,
-        maxTemperature: maxTemperature,
-        weatherPrediction: weatherPrediction
-      }
+    const summarizeWeeklyData: WeatherSummaryDto = {
+      // zaokraglanie wynikow
+      averagePressure: Math.round(avgPressure * 100) / 100,
+      averageExpositionTime: Math.round(avgExpositionTime * 100) / 100,
+      minTemperature: Math.round(minTemperature * 10) / 10,
+      maxTemperature: Math.round(maxTemperature * 10) / 10,
+      weatherPrediction
+    };
 
-      return summarizeWeeklyData;
-
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  private calculateAverage(values: number[]): number {
-    const sum = values.reduce((acc, val) => acc + val, 0);
-    if (values.length === 0) {
-      return 0;
-    }
-    return sum / values.length;
-  }
-
-  private getWeatherPrediction(weatherCodes: number[]): any {
-
-    const precipitationCodes = PRECIPITATION_CODES;
-
-    const rainyDaysCount = weatherCodes.filter(code =>
-      precipitationCodes.includes(code)
-    ).length;
-
-    return rainyDaysCount >= 4 ? "z opadami" : "bez opadów";
+    return summarizeWeeklyData;
   }
 }
