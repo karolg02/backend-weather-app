@@ -5,12 +5,16 @@ import { OpenMeteoSummaryResponseDto } from './dto/open-meteo-summary.dto';
 import { WeatherSummaryDto } from './dto/weather-summary.dto';
 import { PRECIPITATION_CODES } from 'src/common/constants/weather-codes';
 import { ConfigService } from '@nestjs/config/dist/config.service';
+import { ValidationService } from 'src/common/services/validation.service';
 
 @Injectable()
 export class WeatherService {
   private readonly openMeteoApiKey: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly validationService: ValidationService
+  ) {
     this.openMeteoApiKey = this.configService.get<string>('app.openMeteoApiKey')!;
   }
 
@@ -31,7 +35,8 @@ export class WeatherService {
       if (!response.ok) {
         throw new Error(`Nie udało się pobrać danych z zewnętrznego API, kod błędu: ${response.status}`);
       }
-      const data: OpenMeteoWeatherResponseDto = await response.json();
+      const rawData = await response.json();
+      const data = await this.validationService.validateApiResponse<OpenMeteoWeatherResponseDto>(rawData, OpenMeteoWeatherResponseDto);
       const estimateGeneratedEnergy = this.getEstimateGeneratedEnergy(data.daily.sunshine_duration);
 
       const weeklyData: WeatherDto[] = data.daily.time.map((date: string, index: number) => {
@@ -78,8 +83,10 @@ export class WeatherService {
       if (!response.ok) {
         throw new Error(`Nie udało się pobrać danych z zewnętrznego API, kod błędu: ${response.status}`);
       }
-      const data: OpenMeteoSummaryResponseDto = await response.json();
-      // srednie
+      const rawData = await response.json();
+      const data = await this.validationService.validateApiResponse<OpenMeteoSummaryResponseDto>(rawData, OpenMeteoSummaryResponseDto);
+
+      // srednie arytmetyczne
       const avgPressure = this.calculateAverage(data.daily.surface_pressure_mean);
       const avgExpositionTime = this.calculateAverage(data.daily.sunshine_duration) / 3600; //[s] to [h]
       // skrajne temperatury
