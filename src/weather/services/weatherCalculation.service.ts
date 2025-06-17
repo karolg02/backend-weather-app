@@ -3,6 +3,11 @@ import { PRECIPITATION_CODES } from "src/common/constants/weather-codes";
 
 @Injectable()
 export class WeatherCalculationService {
+    /* 
+        Dane do ponizszych metod sa juz wczesniej zwalidowane przy pobieraniu
+        danych z zewntetrznego API, wiec nie ma potrzeby ponownej walidacji
+    */
+
     getEstimateGeneratedEnergy(sunshine_duration: number[]) {
         // dane z zadania
         // efektywność paneli = 0.2
@@ -17,13 +22,9 @@ export class WeatherCalculationService {
     }
     calculateAverage(values: number[]): number {
         const sum = values.reduce((acc, val) => acc + val, 0);
-        if (values.length === 0) {
-            return 0;
-        }
         return sum / values.length;
     }
     getWeatherPrediction(weatherCodes: number[]): string {
-
         const precipitationCodes = PRECIPITATION_CODES;
 
         const rainyDaysCount = weatherCodes.filter(code =>

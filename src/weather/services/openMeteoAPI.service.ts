@@ -5,6 +5,7 @@ import { OpenMeteoWeatherResponseDto } from "../dto/open-meteo-data.dto";
 import { OpenMeteoSummaryResponseDto } from "../dto/open-meteo-summary.dto";
 import { firstValueFrom } from "rxjs";
 import { HttpService } from "@nestjs/axios";
+import { WeatherApiNotFoundException, WeatherApiGatewayException, WeatherApiException, WeatherApiTimeoutException } from "src/common/exceptions/exceptions";
 
 @Injectable()
 export class OpenMeteoApiService {
@@ -62,11 +63,25 @@ export class OpenMeteoApiService {
             return response.data;
         } catch (error) {
             if (error.response) {
-                throw new Error(`Weather API error: ${error.response.status} - ${error.response.statusText}`);
+                const { status, statusText } = error.response;
+
+                switch (status) {
+                    case 404:
+                        throw new WeatherApiNotFoundException();
+                    case 400:
+                    case 422:
+                        throw new WeatherApiGatewayException(status, statusText);
+                    case 500:
+                    case 502:
+                    case 503:
+                        throw new WeatherApiGatewayException(status, statusText);
+                    default:
+                        throw new WeatherApiException(`HTTP ${status}: ${statusText}`);
+                }
             } else if (error.code === 'ECONNABORTED') {
-                throw new Error('Weather API timeout - zewnętrzne API nie odpowiada');
+                throw new WeatherApiTimeoutException();
             } else {
-                throw new Error(`Weather API error: ${error.message}`);
+                throw new WeatherApiException(error.message);
             }
         }
     }

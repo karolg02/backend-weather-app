@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { validate } from 'class-validator';
+import { WeatherApiValidationException } from '../exceptions/exceptions';
 
 @Injectable()
 export class ValidationService {
@@ -13,7 +14,7 @@ export class ValidationService {
                 Object.values(error.constraints || {}).join(', ')
             ).join('; ');
 
-            throw new Error(`Walidacja odpowiedzi API nie powiodła się: ${errorMessages}`);
+            throw new WeatherApiValidationException(errorMessages);
         }
 
         return transformedData;
