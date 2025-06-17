@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { WeatherModule } from './weather/weather.module';
 import configuration from './config/configuration';
+import { validate } from './config/env_validation';
 
 @Module({
   imports: [
@@ -9,6 +10,7 @@ import configuration from './config/configuration';
       isGlobal: true,
       load: [configuration],
       envFilePath: '.env',
+      validate,
     }),
     WeatherModule,
   ],

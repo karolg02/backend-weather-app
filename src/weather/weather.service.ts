@@ -2,12 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { WeatherDto } from './dto/weather-data.dto';
 import { OpenMeteoWeatherResponseDto } from './dto/open-meteo-data.dto';
 import { OpenMeteoSummaryResponseDto } from './dto/open-meteo-summary.dto';
-
 import { WeatherSummaryDto } from './dto/weather-summary.dto';
 import { PRECIPITATION_CODES } from 'src/common/constants/weather-codes';
+import { ConfigService } from '@nestjs/config/dist/config.service';
 
 @Injectable()
 export class WeatherService {
+  private readonly openMeteoApiKey: string;
+
+  constructor(private readonly configService: ConfigService) {
+    this.openMeteoApiKey = this.configService.get<string>('app.openMeteoApiKey')!;
+  }
+
   async getWeatherInfo(latitude: number, longitude: number): Promise<WeatherDto[]> {
     // w razie potrzeby latwo mozna dodac wiecej parametrow
     const params = {
@@ -18,7 +24,7 @@ export class WeatherService {
       forecast_days: '7'
     }
 
-    const url = `${process.env.OPEN_METEO_API_KEY}?${new URLSearchParams(params).toString()}`;
+    const url = `${this.openMeteoApiKey}?${new URLSearchParams(params).toString()}`;
 
     try {
       const response = await fetch(url);
@@ -65,7 +71,7 @@ export class WeatherService {
       timezone: 'auto',
       forecast_days: '7'
     }
-    const url = `${process.env.OPEN_METEO_API_KEY}?${new URLSearchParams(params).toString()}`;
+    const url = `${this.openMeteoApiKey}?${new URLSearchParams(params).toString()}`;
 
     try {
       const response = await fetch(url);
