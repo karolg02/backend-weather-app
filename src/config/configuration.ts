@@ -1,6 +1,6 @@
 import { registerAs } from "@nestjs/config";
-import { ErrorCodes } from "src/common/constants/error-codes";
-import { ConfigurationException } from "src/common/exceptions/exceptions";
+import { ErrorCodes } from "../common/constants/error-codes";
+import { ConfigurationException } from "../common/exceptions/exceptions";
 
 export default registerAs('app', () => {
     const openMeteoApiKey = process.env.OPEN_METEO_API_KEY;

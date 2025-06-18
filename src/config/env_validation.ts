@@ -1,7 +1,7 @@
 import { plainToInstance } from "class-transformer";
 import { IsNotEmpty, IsString, IsUrl, validateSync } from "class-validator";
-import { ErrorCodes } from "src/common/constants/error-codes";
-import { ConfigurationException } from "src/common/exceptions/exceptions";
+import { ErrorCodes } from "../common/constants/error-codes";
+import { ConfigurationException } from "../common/exceptions/exceptions";
 
 class EnvironmentVariables {
     @IsString()
