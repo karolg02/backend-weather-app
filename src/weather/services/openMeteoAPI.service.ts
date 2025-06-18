@@ -1,11 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { ValidationService } from "src/common/services/validation.service";
+import { ValidationService } from "../../common/services/validation.service";
 import { OpenMeteoWeatherResponseDto } from "../dto/open-meteo-data.dto";
 import { OpenMeteoSummaryResponseDto } from "../dto/open-meteo-summary.dto";
 import { firstValueFrom } from "rxjs";
 import { HttpService } from "@nestjs/axios";
-import { WeatherApiNotFoundException, WeatherApiGatewayException, WeatherApiException, WeatherApiTimeoutException } from "src/common/exceptions/exceptions";
+import { WeatherApiNotFoundException, WeatherApiGatewayException, WeatherApiException, WeatherApiTimeoutException } from "../../common/exceptions/exceptions";
+import { ErrorCodes } from "../../common/constants/error-codes";
 
 @Injectable()
 export class OpenMeteoApiService {
@@ -76,12 +77,12 @@ export class OpenMeteoApiService {
                     case 503:
                         throw new WeatherApiGatewayException(status, statusText);
                     default:
-                        throw new WeatherApiException(`HTTP ${status}: ${statusText}`);
+                        throw new WeatherApiException(ErrorCodes.WEATHER_API_ERROR, [`HTTP ${status}: ${statusText}`]);
                 }
             } else if (error.code === 'ECONNABORTED') {
                 throw new WeatherApiTimeoutException();
             } else {
-                throw new WeatherApiException(error.message);
+                throw new WeatherApiException(ErrorCodes.WEATHER_API_ERROR, [error.message]);
             }
         }
     }

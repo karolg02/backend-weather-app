@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { PRECIPITATION_CODES } from "src/common/constants/weather-codes";
+import { PRECIPITATION_CODES } from "../../common/constants/weather-codes";
 
 @Injectable()
 export class WeatherCalculationService {

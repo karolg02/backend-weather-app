@@ -1,10 +1,10 @@
 import { BadGatewayException, BadRequestException, HttpException, HttpStatus, InternalServerErrorException, NotFoundException, RequestTimeoutException } from "@nestjs/common";
-
+import { ErrorCodes } from "../constants/error-codes";
 export class WeatherApiValidationException extends BadRequestException {
-    constructor(validationErrors: string) {
+    constructor(errorCode: ErrorCodes, details: string[] = []) {
         super({
-            type: 'WEATHER_API_VALIDATION_ERROR',
-            details: [validationErrors]
+            type: errorCode,
+            details
         });
     }
 }
@@ -12,8 +12,8 @@ export class WeatherApiValidationException extends BadRequestException {
 export class WeatherApiNotFoundException extends NotFoundException {
     constructor() {
         super({
-            type: 'WEATHER_DATA_NOT_FOUND',
-            details: ['Nie znaleziono danych pogodowych dla podanych współrzędnych']
+            type: ErrorCodes.WEATHER_DATA_NOT_FOUND,
+            details: []
         });
     }
 }
@@ -21,17 +21,17 @@ export class WeatherApiNotFoundException extends NotFoundException {
 export class WeatherApiTimeoutException extends RequestTimeoutException {
     constructor() {
         super({
-            type: 'WEATHER_API_TIMEOUT',
-            details: ['Przekroczono limit czasu połączenia z API pogodowym']
+            type: ErrorCodes.WEATHER_API_TIMEOUT,
+            details: []
         });
     }
 }
 
 export class WeatherApiException extends HttpException {
-    constructor(message: string = 'Błąd podczas komunikacji z API pogodowym') {
+    constructor(errorCode: ErrorCodes = ErrorCodes.WEATHER_API_ERROR, details: string[] = []) {
         super({
-            type: 'WEATHER_API_ERROR',
-            details: [message]
+            type: errorCode,
+            details
         }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
@@ -39,17 +39,26 @@ export class WeatherApiException extends HttpException {
 export class WeatherApiGatewayException extends BadGatewayException {
     constructor(statusCode: number, statusText: string) {
         super({
-            type: 'WEATHER_API_GATEWAY_ERROR',
-            details: [`Zewnętrzne API pogodowe zwróciło błąd: ${statusCode} - ${statusText}`]
+            type: ErrorCodes.WEATHER_API_GATEWAY_ERROR,
+            details: [`HTTP ${statusCode}: ${statusText}`]
         });
     }
 }
 
 export class ConfigurationException extends InternalServerErrorException {
-    constructor(validationErrors: string[]) {
+    constructor(errorCode: ErrorCodes, details: string[] = []) {
         super({
-            type: 'CONFIGURATION_ERROR',
-            details: [validationErrors]
+            type: errorCode,
+            details
+        });
+    }
+}
+
+export class WeatherCalculationException extends BadRequestException {
+    constructor(errorCode: ErrorCodes, details: string[] = []) {
+        super({
+            type: errorCode,
+            details
         });
     }
 }

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { validate } from 'class-validator';
 import { WeatherApiValidationException } from '../exceptions/exceptions';
+import { ErrorCodes } from '../constants/error-codes';
 
 @Injectable()
 export class ValidationService {
@@ -12,9 +13,12 @@ export class ValidationService {
         if (errors.length > 0) {
             const errorMessages = errors.map(error =>
                 Object.values(error.constraints || {}).join(', ')
-            ).join('; ');
+            );
 
-            throw new WeatherApiValidationException(errorMessages);
+            throw new WeatherApiValidationException(
+                ErrorCodes.WEATHER_API_VALIDATION_ERROR,
+                errorMessages
+            );
         }
 
         return transformedData;
