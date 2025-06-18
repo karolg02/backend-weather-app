@@ -5,6 +5,11 @@ on: [push]
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    env:
+      OPEN_METEO_API_KEY: ${{ secrets.OPEN_METEO_API_KEY }}
+      PORT: 3000
+
     steps:
       - uses: actions/checkout@v3
       
