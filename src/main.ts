@@ -15,6 +15,12 @@ async function bootstrap() {
     disableErrorMessages: false,
   }));
 
+  app.enableCors({
+    origin: ['http://localhost:5173', 'https://localhost:5173'],
+    methods: ['GET'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
+
   const config = new DocumentBuilder()
     .setTitle('Weather API')
     .setDescription('API do pobierania danych pogodowych i obliczeń energii słonecznej')
