@@ -16,7 +16,7 @@ async function bootstrap() {
   }));
 
   app.enableCors({
-    origin: ['http://localhost:5173', 'https://localhost:5173', 'http://localhost:10000'],
+    origin: ['http://localhost:5173', 'https://frontend-weather-app.onrender.com'],
     methods: ['GET'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
