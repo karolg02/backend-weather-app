@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { WeatherDto } from './dto/weather-data.dto';
 import { WeatherSummaryDto } from './dto/weather-summary.dto';
-import { WeatherCalculationService } from './services/weatherCalculation.service';
-import { OpenMeteoApiService } from './services/openMeteoAPI.service';
+import { WeatherCalculationService } from './services/weather-calculation.service';
+import { OpenMeteoApiService } from './services/open-meteo-api.service';
 
 @Injectable()
 export class WeatherService {

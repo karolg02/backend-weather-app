@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { of, throwError } from 'rxjs';
-import { OpenMeteoApiService } from '../../src/weather/services/openMeteoAPI.service';
+import { OpenMeteoApiService } from '../../src/weather/services/open-meteo-api.service';
 import { ValidationService } from '../../src/common/services/validation.service';
 import {
     WeatherApiException,

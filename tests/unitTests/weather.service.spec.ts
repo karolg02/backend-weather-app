@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { WeatherService } from '../../src/weather/weather.service';
-import { WeatherCalculationService } from '../../src/weather/services/weatherCalculation.service';
-import { OpenMeteoApiService } from '../../src/weather/services/openMeteoAPI.service';
+import { WeatherCalculationService } from '../../src/weather/services/weather-calculation.service';
+import { OpenMeteoApiService } from '../../src/weather/services/open-meteo-api.service';
 
 describe('WeatherService', () => {
     let service: WeatherService;
